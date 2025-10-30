@@ -1,4 +1,4 @@
-“// npm i ai @ai-sdk/google
+
 import { generateText } from "ai";
 import { google, GoogleGenerativeAIProviderMetadata } from "@ai-sdk/google";
 

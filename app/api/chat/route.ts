@@ -10,6 +10,9 @@ export async function POST(req: Request) {
   const result = streamText({
     model: google('gemini-2.5-flash'),
     messages: convertToModelMessages(messages),
+    tools: {
+      google_search: google.tools.googleSearch({})
+    }
   });
 
   return result.toUIMessageStreamResponse();

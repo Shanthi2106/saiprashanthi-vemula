@@ -11,8 +11,15 @@ export async function POST(req: Request) {
     model: google('gemini-2.5-flash'),
     messages: convertToModelMessages(messages),
     tools: {
-      google_search: google.tools.googleSearch({})
-    }
+      // Enable Google Search Grounding
+      google_search: google.tools.googleSearch({}),
+      url_context: google.tools.urlContext({}),
+      
+
+    },
+    
+
+    
   });
 
   return result.toUIMessageStreamResponse();

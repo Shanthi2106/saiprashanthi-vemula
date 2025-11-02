@@ -1,7 +1,20 @@
-import type { NextConfig } from "next";
+// npm i ai @ai-sdk/google
+import { generateText } from "ai";
+import { google, GoogleGenerativeAIProviderMetadata } from "@ai-sdk/google";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+export async function askWithSearch(prompt: string) {
+  const { text, providerMetadata } = await generateText({
+    model: google("gemini-2.5-flash"),
+    tools: {
+      // Enable Google Search Grounding
+      google_search: google.tools.googleSearch({}),
+    },
+    prompt,
+  });
 
-export default nextConfig;
+  // Access Google-specific metadata (typesafe cast is optional)
+  const g = providerMetadata?.google as GoogleGenerativeAIProviderMetadata | undefined;
+  const groundingMetadata = g?.groundingMetadata; // queries, chunks, supports, etc.
+
+  return { text, groundingMetadata };
+}

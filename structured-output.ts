@@ -41,6 +41,7 @@ const personalInfoSchema =
 
 const result = streamObject({
   model: google("gemini-2.5-flash-lite"),
+  temperature: 0,
   system: `
 You are an AI assistant designed to help build resume. Provide guidance on how to build the resume, what to include, what to avoid, what to highlights, what to keep in mind while building the resume.
 

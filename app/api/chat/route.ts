@@ -9,15 +9,20 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: google('gemini-2.5-flash'),
-    messages: convertToModelMessages(messages),
+    temperature: 0,
+    system: `You are an AI product management assistant designed to help product managers
+    excel in their role. Provide
+    guidance on product strategy, roadmapping, maangement etc. Only talk about technical and resume building topics.Provide direct actionable responses with their clear structure, use examples to clarify, be concise but thorough, adapt language to user expertise level.`,
     tools: {
       // Enable Google Search Grounding
       google_search: google.tools.googleSearch({}),
       url_context: google.tools.urlContext({}),
-      
+
 
     },
-    
+
+    messages: convertToModelMessages(messages)
+   
 
     
   });

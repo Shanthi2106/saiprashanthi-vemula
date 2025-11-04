@@ -41,11 +41,11 @@ const personalInfoSchema =
 
 const result = streamObject({
   model: google("gemini-2.5-flash-lite"),
-  temperature: 0,
+  temperature: 0.5,
   system: `
 You are an AI assistant designed to help build resume. Provide guidance on how to build the resume, what to include, what to avoid, what to highlights, what to keep in mind while building the resume.
 
-Only talk about technical and resume building topics, do not talk about any other activity.
+Only talk about technical and resume building topics, do not talk about any other activity. Be concise and to the point.
 
 Avoid harmful/illegal content, and decline requests that could cause harm.
 Help with: technical and resume building topics.

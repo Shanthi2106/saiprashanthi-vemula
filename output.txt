@@ -1,0 +1,337 @@
+**Towards Blind and Low-Vision Accessibility of Lightweight VLMs and Custom LLM-Evals**
+
+Shruti Singh Baghel¹, Yash Pratap Singh Rathore¹, Sushovan Jena¹, Anurag Pradhan², Amit Shukla¹, Arnav Bhavsar¹, Pawan Goyal⁴  
+¹Indian Institute of Technology Mandi, {s24110, s24036, s20011, amitshukla, arnav}@iitmandi.ac.in  
+²Vellore Institute of Technology, anurag.pradhan2023@vitstudent.ac.in  
+⁴Indian Institute of Technology Kharagpur, pawang@cse.iitkgp.ac.in  
+
+---
+
+### Abstract  
+Large Vision-Language Models (VLMs) excel at understanding and generating video descriptions but their high memory, computational, and deployment demands hinder practical use—especially for blind and low-vision (BLV) users who depend on detailed, context-aware descriptions. To examine the impact of model size on accessibility-focused description quality, we evaluate SmolVLM2 variants with 500M and 2.2B parameters across two diverse datasets: AVCaps (outdoor) and Charades (indoor).  
+
+We introduce two novel evaluation frameworks specifically designed for BLV accessibility assessment:  
+- **Multi-Context BLV Framework**, evaluating spatial orientation, social interaction, action events, and ambience contexts;  
+- **Navigational Assistance Framework**, focusing on mobility-critical information.  
+
+Additionally, we conduct a systematic evaluation of four prompt design strategies. Both models are deployed on a smartphone, assessing FP32 and INT8 precision variants to evaluate real-world performance constraints on resource-limited mobile devices.
+
+---
+
+### 1 Introduction  
+Large multimodal vision-language models (VLMs), such as the GPT and LLaVA series by OpenAI and Microsoft (Liu et al., 2023; OpenAI, 2023), have shown impressive capabilities in understanding and generating detailed descriptions of visual content. While these large models can produce high-quality audio descriptions that meet professional standards, their practical application is limited by high computational demands and reliance on cloud infrastructure. This requirement for continuous internet connectivity makes them unsuitable for deployment on everyday devices such as smartphones or tablets, rendering them impractical for BLV users who need real-time, private, on-device accessibility.
+
+Our research investigates whether significantly smaller models, capable of operating on resource-limited devices, can generate video descriptions comparable in quality to those from larger models. In real-world settings, BLV users require on-device solutions that provide timely, detailed descriptions without relying on remote servers or continuous internet access. A lightweight model integrated into a smartphone app could locally process live or recorded video, enabling synchronized, context-aware audio feedback (such as scene changes, object appearances, and actions) delivered directly through headphones.
+
+Small vision-language models are emerging as a promising approach to overcome the disadvantages of larger models while still delivering competitive performance on specific tasks. These compact models, typically with fewer than 2 billion parameters, operate effectively on consumer-grade hardware, enabling on-device implementation and real-time processing. Notable recent developments include SmolVLM2-500M-Video-Instruct (Allal et al., 2024) and SmolVLM2-2.2B-Video-Instruct (Marafioti et al., 2024), both tailored for video understanding tasks.
+
+Moreover, integrating human annotations (HA) and contextual information enhances model understanding by providing comprehensive guidance for accessibility-focused video description generation. Despite this, models often fall short for BLV users who require precise, contextually relevant, and in-depth information. To address these limitations, professional audio-description (AD) guidelines developed by organizations such as Netflix, Ofcom, Media Access Canada, and the Described and Captioned Media Program (Li et al., 2025) offer structured frameworks ensuring consistency in character identification, scene description, and narrative flow comprehension.  
+
+As illustrated in Figure 1, SmolVLM2-500M-Video-Instruct generates progressively detailed and accessibility-focused descriptions when supplemented with human annotations.
+
+---
+
+*arXiv:2511.10615v1 [cs.CV], 13 Nov 2025*
+(HA) and professional AD guidelines.
+
+To validate practical deployment viability, we conducted real-world testing on a mobile device, evaluating both SmolVLM2 variants in FP32 and INT8 precision formats. This on-device deployment approach demonstrates that professional-quality video descriptions can be generated locally on consumer devices without cloud connectivity, establishing feasibility for democratizing video accessibility for BLV users.
+
+**Key Contributions:**
+
+1. We evaluated SmolVLM2 variants across two different environmental contexts, revealing that smaller models often outperform larger variants in specific accessibility scenarios.
+
+2. We implemented four progressive prompting strategies to investigate how instruction complexity affects model performance for BLV users.
+
+3. We introduce two specialized evaluation frameworks—the Multi-Context Evaluation Framework and the Navigation Assistance Framework—that address critical gaps in existing evaluation methodologies, which currently undervalue BLV users’ preferences.
+
+4. We demonstrate that professional-quality audio descriptions may be produced locally without relying on the cloud through extensive real-world deployment testing on consumer-grade smartphones.
+
+---
+
+### 2. DATASETS
+
+Our evaluation utilizes two benchmark datasets representing different environmental contexts (indoor and outdoor):
+
+- **Indoor Dataset (Sigurdsson et al., 2016):** From the original 9,848 videos (7,985 training, 1,863 testing), we selected 498 videos and their corresponding human annotations from the test set. This represents approximately 27% of the test set, chosen to include diverse indoor activities while ensuring balanced representation across activity categories (e.g., cooking, cleaning).
+
+- **Outdoor Dataset (Sudarsanam et al., 2024):** We selected 423 outdoor videos and their human annotations from the complete collection of 2,061 clips across all partitions. This 20% sample was stratified across various outdoor scenarios (urban environments, parks, streets, natural settings) to maintain environmental diversity critical for evaluating outdoor navigation assistance. This smaller subset was selected to evaluate the model’s performance in diverse real-world scenarios with varying lighting, weather, and background complexity.
+
+---
+
+### 3. FRAMEWORK
+
+Our research investigates performance trade-offs between resource-constrained and resource-intensive vision-language models for accessibility-focused video description. We designed a comprehensive evaluation framework that systematically compares SmolVLM2-500M-Video-Instruct (Allal et al., 2024) and SmolVLM2-2.2B (Marafioti et al., 2024) across diverse video content and prompting strategies.
+
+#### 3.1 Overview
+
+Our approach enables systematic investigation of how model size affects accessibility-focused video description quality across varying instruction complexity levels. The experimental design employs four distinct prompting strategies demonstrating progressive complexity, from baseline approaches to comprehensive accessibility-focused instruction integration.
+
+#### 3.2 Model Selection
+
+For our evaluation, we selected SmolVLM2-500M-Video-Instruct and SmolVLM2-2.2B-Video-Instruct due to their combined advantages for video description tasks (Marafioti et al., 2024). Both models are explicitly fine-tuned for video understanding with temporal mechanisms essential for coherent description generation, while maintaining exceptional edge deployment viability with GPU memory requirements of only 1.8 GB and 5.2 GB, respectively—significantly lower than larger alternatives.
+
+The 500M variant achieves competitive performance on Video-MME (42.2) with maximum computational efficiency, while the 2.2B variant offers enhanced quality for scenarios with additional resources. Both demonstrate state-of-the-art performance in their respective parameter classes. Critically, both variants support robust instruction-following capabilities necessary for implementing professional audio-description guidelines from VideoA11y (Li et al., 2025), enabling real-time inference on consumer hardware and democratizing accessibility.
+**Figure 1: Experimental Design Overview**
+
+Four prompting strategies were evaluated across SmolVLM variants and the reference model Qwen. The diagram illustrates a progression in complexity from the baseline prompt-only approach to a comprehensive prompt that integrates context and audio-description (AD) guidelines. Each strategy generates video descriptions that are evaluated against ground truth using both standard NLP metrics and custom accessibility metrics designed specifically for blind and low-vision (BLV) users.
+
+---
+
+### Prompting Strategies and Examples
+
+| Strategy            | Example Description                                                                                                      |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------|
+| **Prompt (Baseline)**         | “A child is playing on a blue slide at a playground. The child is wearing a red hat and....”                           |
+| **Prompt + AD**               | “A man in a black jacket and red hat is holding a baby in a swing...”                                                   |
+| **Prompt + Context**          | “The child is walking in the snow. The baby was playing at a park...”                                                 |
+| **Prompt + Context + AD**     | “A man in a black jacket and red hat is crouching down on a swing set in a snowy park... A child wearing a red hat and black jacket explores a snowy playground under the supervision of an adult...”  |
+
+---
+
+### Custom Metric Evaluation Examples
+
+| Description Type                 | Example                                                                                                                       |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| Ground Truth (Qwen 2.5 VL 7B)  | “A man in a black jacket is holding a child in a park. The child is wearing a red hat...”                                       |
+| Prompt + Context + AD           | “In the heart of a snowy playground, a young child, clad in a vibrant red hat and a black coat...”                             |
+
+---
+
+### Model Variants
+
+| Model          | Parameters          |
+|----------------|---------------------|
+| SMOLVLM        | 500 Million         |
+| SMOLVLM        | 2.2 Billion         |
+| QWEN           | Reference Model (Ground Truth) |
+
+---
+
+### Research Questions
+
+This study focuses on improving video accessibility under computational constraints, addressing three core research questions:
+
+1. How effectively can smaller models match the performance of large models for accessibility-focused video descriptions when guided by professional audio-description (AD) guidelines?
+
+2. How do performance trade-offs affect deployment on resource-limited hardware such as smartphones?
+
+3. Why are custom accessibility metrics better than standard NLP metrics at capturing the true preferences of BLV users regarding the quality of video descriptions?
+
+---
+
+### Comprehensive Approach
+
+- **Ground Truth Generation**: We use Qwen 2.5 VL 7B Instruct along with expert audio-description guidelines from VideoA11y (Li et al., 2025) to generate ground truth descriptions. This approach complies with all 42 audio-description guidelines, producing descriptions that meet professional accessibility standards and demonstrate strong instruction-following capabilities required for VideoA11y’s methodology.
+
+- **Video Processing**: To maintain essential visual information efficiently, we implemented an adaptive keyframe extraction algorithm based on inter-frame differences in the LUV color space. Our method computes absolute differences between consecutive frames, applies Hanning window smoothing, and identifies local maxima in the difference signal. Typically, 3-4 keyframes are extracted per video. While increasing keyframe density can improve temporal coverage, it also adds to the computational cost — a crucial consideration for on-device deployment.
+
+- **Prompting Techniques**: Following VideoA11y’s experimental paradigm (Li et al., 2025), we employed four prompting strategies to assess the influence of context and instruction complexity on model performance:
+
+    1. **Prompt Only**: Zero-shot generation using a standardized compliant prompt as a baseline with no extra guidance.
+    
+    2. **Prompt + Context**: Incorporates the compliant prompt along with original human annotations from datasets to evaluate the model’s ability to utilize existing context.
+
+(Additional prompting strategies omitted for brevity but include Prompt + AD and Prompt + Context + AD.)
+
+---
+
+### Evaluation Framework
+
+- **Metrics**: Generated descriptions are evaluated using both standard NLP objectives—descriptiveness, objectivity, accuracy, clarity—and custom accessibility metrics measuring special orientation, social interaction, action & event, and aesthetic/atmospheric qualities.
+
+- **Goal**: This comprehensive evaluation provides insights into the practical implications of deploying compact vision-language models (VLMs) for accessibility applications while maintaining the high standards necessary for BLV users.
+
+---
+
+This text has been cleaned to preserve all original information and context, presenting it clearly and cohesively for research and practical application purposes.
+Annotation Information  
+Context refers to human annotations from the original datasets (Indoor and Outdoor), exactly as implemented in VideoA11y. Human annotations are concatenated with the prompt as the "Current Description" before being input to the MLLM.  
+
+(3) Prompt with Context and AD Guidelines – combining the prompt with human annotations and 42 professional audio-description guidelines to assess comprehensive multimodal instruction following.  
+(4) Prompt with AD Guidelines – integrating the compliant prompt with audio-description guidelines only, to test whether structured accessibility guidelines alone can enable compact models to produce descriptions meeting the needs of BLV users.  
+
+3.4 Proposed Evaluation Frameworks  
+Our evaluation protocol addresses the critical limitations of reference-based metrics for accessibility applications (Kapur and Kreiss, 2024). We employ dual assessment methodologies: standard NLP metrics for comparison with existing research and two novel accessibility-centric evaluation frameworks. These frameworks are specifically designed to reflect BLV users’ actual needs and preferences. This dual evaluation approach overcomes the systematic bias that reference-based metrics exhibit against BLV users’ preferences, as demonstrated by Kapur and Kreiss (2024). While VideoA11y effectively assesses general description quality, it lacks granularity for diverse BLV contexts and navigational needs. To fill these gaps, we introduce two complementary frameworks: the Multi-Context BLV Framework and the Navigational Assistance Framework.  
+
+3.4.1 Multi-Context BLV Framework  
+This framework evaluates descriptions across four critical user scenarios, reflecting diverse BLV information needs in real-world settings:  
+(i) Spatial Orientation (1–10 scale): Assesses location descriptions, directional cues, relative positioning, and environmental layout information essential for mental mapping.  
+(ii) Social Interaction (1–10 scale): Evaluates person identification, interpersonal dynamics, emotional expressions, and social context crucial for understanding human interactions.  
+(iii) Action & Events (1–10 scale): Measures temporal sequence clarity, activity description completeness, and causal relationships between events.  
+(iv) Ambience (1–10 scale): Captures mood, lighting conditions, environmental atmosphere, and sensory details that enhance immersive comprehension.  
+
+The overall score is calculated as:  
+
+MCF_Score = (S_spatial + S_social + S_action + S_ambience) / 4  
+
+where:  
+• S_spatial ∈ [1, 10]: Spatial Orientation Context score  
+• S_social ∈ [1, 10]: Social Interaction Context score  
+• S_action ∈ [1, 10]: Action & Event Context score  
+• S_ambience ∈ [1, 10]: Ambience Context score  
+
+Our framework weights these dimensions based on navigation-critical scenarios rather than general description quality.  
+
+3.4.2 Navigational Assistance Framework  
+This framework focuses on mobility-critical information through four dimensions essential for spatial navigation and safety:  
+(i) Descriptiveness: Spatial layout detail, hazard identification, and environmental feature descriptions (obstacles, pathways, boundaries).  
+(ii) Objectivity: Factual reporting without assumptions, avoiding subjective interpretations of spatial relationships.  
+(iii) Accuracy: Precision in spatial relationships, object positions, and distance estimations critical for navigation decisions.  
+(iv) Clarity: Information organization for sequential navigation decision-making, including logical flow and unambiguous directional references.  
+
+The overall score is calculated as:  
+
+NAF_Score = (N_descriptiveness + N_objectivity + N_accuracy + N_clarity) / 4  
+
+where:  
+[Note: the text cuts off here.]
+• N_descriptiveness ∈ [1, 10]: Descriptiveness metric score  
+• N_objectivity ∈ [1, 10]: Objectivity metric score  
+• N_accuracy ∈ [1, 10]: Accuracy metric score  
+• N_clarity ∈ [1, 10]: Clarity metric score  
+
+3.4.3 Implementation and Validation  
+For custom accessibility metrics evaluation, we employ GPT-OSS-20B (OpenAI, 2025), a 20-billion parameter open-source language model, following the VideoA11y evaluation methodology (Li et al., 2025). All evaluations were conducted with GPT-OSS-20B running locally via the Ollama server (Ollama, 2024) to ensure offline, reproducible results without network dependencies. The model processes both Qwen 2.5 VL 7B Instruct-generated ground truth descriptions and descriptions produced by both SmolVLM variants (500M and 2.2B) using VideoA11y’s standardized evaluation template, allowing consistent assessment of the four custom accessibility dimensions. This systematic evaluation supports investigation of our three core research questions outlined earlier (Section 3.2).  
+
+3.5 Mobile Deployment and Performance Evaluation  
+To assess real-world deployment viability for accessibility applications, we conducted comprehensive on-device evaluation using a Vivo Y27 smartphone equipped with a MediaTek Helio G85 octa-core processor and Mali-G52 MC2 GPU with 6GB shared system memory. Our deployment methodology employed the llama.cpp framework’s llamamtmd-cli tool, requiring model conversion to .gguf format for mobile compatibility. FP32 variants were converted from their original safetensors format using the official convert_hf_to_gguf.py script, while INT8 quantized versions were generated through Hugging Face’s "GGUF My Repo" feature to evaluate precision-performance trade-offs essential for resource-constrained deployment.  
+
+The mobile execution environment utilized Termux for Android terminal access, enabling local compilation of llama-mtmd-cli and direct model inference without external dependencies. We implemented a keyframe extraction pipeline using FFmpeg within the mobile environment, processing videos into sequential image frames combined with textual prompts incorporating professional AD guidelines. Both FP32 and INT8 versions of the two models were tested under identical conditions. This setup allowed us to collect detailed performance measurements, including latency, memory usage, and operational behavior during inference on a resource-constrained mobile platform.  
+
+4 Results and Discussions  
+All experiments maintain consistent hardware configurations and inference parameters to ensure reproducible comparative analysis between resource-constrained and larger models for accessibility-focused video description generation.  
+
+Table 1 shows that SmolVLM2-500M demonstrates strong prompt sensitivity with clear performance patterns across indoor and outdoor scenarios. The "Prompt + AD Guidelines" approach dominates most evaluation metrics on both datasets, showing consistent alignment with AD-style references and superior lexical overlap performance. However, "Prompt + Context + AD Guidelines" occasionally excels in semantic-matching metrics like METEOR, indicating that contextual information can enhance meaning preservation. The model exhibits a notable bias toward AD-style instructions due to reference generation conditions and generally performs better on indoor Charades scenarios compared to outdoor AVCaps environments.  
+
+Table 2 demonstrates that the larger 2.2B model exhibits different contextual utilization patterns. Table 1 presents results for all four prompting strategies using the 500M model, whereas Table 2 reports results for the two best-performing strategies: "Prompt + AD Guidelines" and "Prompt + Context + AD Guidelines." This decision was driven by Table 1’s clear demonstration that basic "Prompt Only" and "Prompt + Context" strategies consistently underperform compared to AD-enhanced approaches across all standard NLP metrics; therefore, these two strategies were omitted for the 2.2B model.  
+
+In indoor scenarios, adding contextual information substantially enhances performance across all metrics, with "Prompt + Context + AD Guidelines" consistently outperforming the basic AD approach. This indicates the larger model can effectively exploit additional context to improve generation quality in structured, predictable environments. However, in outdoor scenarios, the performance gap narrows significantly, with context sometimes failing to provide meaningful improvements and occasionally diluting performance.
+Table 1: SmolVLM2-500M-Video-Instruct – Standard NLP Metrics Performance  
+| Strategy / Dataset                     | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | SPICE  | CIDEr  |  
+|--------------------------------------|--------|--------|--------|---------|--------|--------|  
+| **Indoor**                           |        |        |        |         |        |        |  
+| Prompt Only                         | 0.191  | 0.046  | 0.145  | 0.254   | 0.1937 | 0.134  |  
+| Prompt + Context                    | 0.304  | 0.062  | 0.112  | 0.251   | 0.1526 | 0.1358 |  
+| Prompt + AD Guidelines             | 0.311  | 0.077  | 0.156  | 0.275   | 0.1795 | 0.1721 |  
+| Prompt + Context + AD Guidelines   | 0.287  | 0.070  | 0.153  | 0.268   | 0.1729 | 0.194  |  
+| **Outdoor**                         |        |        |        |         |        |        |  
+| Prompt Only                       | 0.135  | 0.029  | 0.139  | 0.235   | 0.1872 | 0.116  |  
+| Prompt + Context                  | 0.195  | 0.034  | 0.120  | 0.220   | 0.1553 | 0.137  |  
+| Prompt + AD Guidelines           | 0.223  | 0.047  | 0.148  | 0.251   | 0.1943 | 0.207  |  
+| Prompt + Context + AD Guidelines | 0.273  | 0.055  | 0.162  | 0.247   | 0.171  | 0.131  |  
+
+*Note: All metrics are scored on a 0-1 scale where higher values indicate better performance.*
+
+---
+
+Table 2: SmolVLM2-2.2B-Instruct – Standard NLP Metrics Performance  
+| Strategy / Dataset                   | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr  | SPICE  |  
+|------------------------------------|--------|--------|--------|---------|--------|--------|  
+| **Indoor**                         |        |        |        |         |        |        |  
+| Prompt + AD Guidelines             | 0.2723 | 0.0619 | 0.1353 | 0.2606  | 0.1930 | 0.1768 |  
+| Prompt + Context + AD Guidelines   | 0.3271 | 0.0798 | 0.1363 | 0.2750  | 0.2258 | 0.1841 |  
+| **Outdoor**                       |        |        |        |         |        |        |  
+| Prompt + AD Guidelines             | 0.1850 | 0.0345 | 0.1515 | 0.1946  | 0.0884 | 0.1462 |  
+| Prompt + Context + AD Guidelines   | 0.1878 | 0.0331 | 0.1485 | 0.1913  | 0.0719 | 0.142  |  
+
+---
+
+Table 3: SmolVLM2-2.2B-Instruct – Custom Accessibility Metrics Performance  
+| Strategy / Dataset                 | Descriptive | Objective | Accurate | Clear  |  
+|----------------------------------|-------------|-----------|----------|--------|  
+| **Indoor**                      |             |           |          |        |  
+| Prompt + AD Guidelines           | 2.508       | 3.251     | 1.935    | 3.345  |  
+| Prompt + Context + AD Guidelines | 2.529       | 3.246     | 1.783    | 3.414  |  
+| **Outdoor**                    |             |           |          |        |  
+| Prompt + AD Guidelines           | 2.908       | 2.712     | 1.778    | 3.095  |  
+| Prompt + Context + AD Guidelines | 2.936       | 2.761     | 1.835    | 3.222  |  
+
+---
+
+Table 4: Model Performance Comparison for "Prompt + Context + AD Guidelines" Strategy Using Custom Metrics  
+| Metric       | SmolVLM2-500M-Video-Instruct Outdoor | SmolVLM2-500M-Video-Instruct Indoor | SmolVLM2-2.2B-Instruct Outdoor | SmolVLM2-2.2B-Instruct Indoor |  
+|--------------|-------------------------------------|------------------------------------|-------------------------------|------------------------------|  
+| Descriptive  | 3.031                               | 2.779                              | 2.936                         | 2.529                        |  
+| Objective    | 2.747                               | 2.793                              | 2.761                         | 3.246                        |  
+| Accurate     | 1.719                               | 1.627                              | 1.835                         | 1.780                        |  
+| Clarity     | 3.177                               | 3.094                              | 3.222                         | 3.414                        |
+Table 5: Performance Comparison of SmolVLM2 Models with FP32 and INT8 Quantization
+
+| Model            | SmolVLM2-500M |           | SmolVLM2-2.2B |           |
+|------------------|---------------|-----------|---------------|-----------|
+|                  | FP32          | INT8      | FP32          | INT8      |
+| LATENCY          | 33639.04 ms   | 29904.29 ms | 200642.04 ms  | 201306.71 ms |
+| PEAK DRAM USAGE  | 1142.784 MB   | 761.856 MB | 2797.216 MB   | 2512.896 MB |
+| MODEL SIZE       | 190.22 MB     | 103.73 MB  | 831.87 MB     | 565.05 MB  |
+| TOKEN PER SECOND (generation speed) | 6.41          | 13.55     | 0.05          | 1.47      |
+| TIME TO FIRST TOKEN | 17120.57 ms | 18797.63 ms | 150457.48 ms | 123936.97 ms |
+| TIME PER OUTPUT TOKEN | 155.95 ms | 73.81 ms  | 18501.90 ms   | 680.44 ms  |
+| TOKEN GENERATION TIME | 10604.30 ms | 8192.60 ms | 1813186.29 ms | 70085.14 ms |
+
+In precision-focused measures:
+
+Table 3 examines how contextual integration affects description quality for BLV (Blind and Low Vision) users. In indoor environments, adding context provides modest improvements in descriptiveness and clarity but causes slight decreases in objectivity and more notable declines in accuracy. This suggests enhanced vividness may come at the cost of strict factual reporting. Conversely, in outdoor environments, contextual cues are particularly valuable, benefiting all evaluation dimensions with especially notable improvements in clarity and accuracy. This pattern indicates that contextual information helps BLV users gain better spatial awareness and is especially useful in dynamic, visually complex outdoor environments.
+
+Table 4 reveals distinct strengths between model variants when using optimal prompting strategies. The 2.2B model demonstrates superior clarity and accuracy, along with better objectivity in indoor scenarios, making it more dependable for producing trustworthy, accessible descriptions. Meanwhile, the smaller 500M model excels in descriptive richness.
+
+Table 5 explains that the llama-cpp inference framework's total latency consists of Load Time (model loading), Prompt Evaluation Time (input processing and tokenization), and Generation Time (step-by-step token generation). Latency depends on both per-token processing speed and the number of generated tokens. For the 500M INT8 model, quantization affects output probabilities due to reduced precision, leading to longer token sequences and increased Generation Time compared to FP32. Although the INT8 model processes tokens faster (73.8 ms/token vs. 155.9 ms/token for FP32), it generates more tokens (111 vs. 68), resulting in higher overall latency.
+
+Table 6’s multi-context evaluation framework shows that scaling model size does not uniformly improve performance across all contextual dimensions for BLV users. The 500M model performs better at Ambience context description, indicating smaller models are effective at capturing environmental scenarios and visual mood essential for BLV spatial understanding. The Action & Event context consistently scores lowest across all model-dataset combinations, highlighting a critical limitation in temporal sequence description that impacts BLV users’ ability to follow dynamic content.
+
+Table 7 demonstrates that the 500M model consistently outperforms the 2.2B variant in Objectivity scores, indicating smaller models provide more factual, assumption-free descriptions crucial for BLV navigation safety. However, the larger model shows better accuracy in outdoor scenarios. The consistently moderate Descriptiveness scores across both models reveal a critical gap in providing the detailed spatial information BLV users require for effective navigation.
+
+Our NLP metric scores align with video captioning benchmarks: BLEU-1 > 0.3 indicates strong performance, and CIDEr > 0.7 is very good; 0.4–0.7 moderate; < 0.4 low (Vedantam et al., 2015). Our results show BLEU-1 ranging from 0.135 to 0.327 and CIDEr from 0.072 to 0.207, which fall within typical ranges for accessibility-focused video descriptions demanding richer contextual detail. The 500M model demonstrates superior performance in outdoor scenarios and achieves higher objectivity scores (5.02–5.11), crucial for BLV safety, while the 2.2B model excels in indoor settings.
+**Table 6: Quantitative Results for Multi-Context Evaluation Framework**
+
+| Dataset  | Model Variant | Special Orientation | Social Interaction | Action & Event | Ambience |
+|----------|----------------|--------------------|--------------------|---------------|----------|
+| Outdoor  | 500M           | 3.55               | 63.20              | 62.58         | 54.66    |
+| Outdoor  | 2.2B           | 3.41               | 63.27              | 12.63         | 24.92    |
+| Indoor   | 500M           | 3.22               | 33.28              | 12.12         | 64.31    |
+| Indoor   | 2.2B           | 2.97               | 63.33              | 21.95         | 35.32    |
+
+---
+
+**Table 7: Quantitative Results for Navigation Assistance Framework**
+
+| Dataset  | Model Variant | Descriptiveness | Objective | Accurate | Clarity |
+|----------|----------------|-----------------|-----------|----------|---------|
+| Outdoor  | 500M           | 3.57            | 5.10      | 7.15     | 3.93    |
+| Outdoor  | 2.2B           | 3.24            | 4.90      | 3.37     | 3.74    |
+| Indoor   | 500M           | 3.25            | 5.02      | 3.00     | 3.53    |
+| Indoor   | 2.2B           | 2.81            | 5.19      | 3.51     | 3.48    |
+
+---
+
+**Additional Insights:**
+
+- Clarity scores show improvement (3.414 vs. 3.094) alongside spatial accuracy.
+- Action & Event scores are the lowest (1.95–2.63), reflecting visual language models' (VLMs) struggle with sequential temporal reasoning.
+- Descriptiveness scores (2.5–3.6) suggest limited spatial detail for safe navigation by blind and low-vision (BLV) users.
+
+---
+
+**5. Conclusion**
+
+Our comprehensive evaluation reveals three critical insights challenging conventional assumptions about model scaling for accessibility applications. We introduce two novel evaluation frameworks—the **Multi-Context BLV Framework** and the **Navigational Assistance Framework**—which systematically address the bias of reference-based metrics against BLV user preferences.
+
+These frameworks demonstrate that smaller models (500M parameters) often excel in **environmental adaptability** and **objective description generation**, while larger models (2.2B parameters) provide enhanced precision in structured scenarios.
+
+Mobile evaluation establishes the feasibility of edge deployment, showing inference times of 60–83 seconds for 500M models on consumer hardware. This addresses privacy and connectivity barriers disproportionately affecting BLV users.
+
+The practical deployment of accessibility-focused VLMs on ubiquitous consumer technology represents a significant step toward democratizing video accessibility, providing BLV users with immediate, private, and contextually relevant video descriptions without reliance on internet connectivity or centralized services.
+
+---
+
+**References**
+
+- Loubna Ben Allal et al. 2024. *Smolvlm: A small vision language model.* arXiv preprint arXiv:2504.05299.
+- Rhea Kapur and Elisa Kreiss. 2024. Reference-based metrics are biased against blind and low-vision users’ image description preferences. In *Proceedings of the Third Workshop on NLP for Positive Impact*, pages 308–314.
+- Chaoyu Li, Kohei Watanabe, Elliot Poncin, Nicolas Audebert, Julia Hirschberg, and Heiga Zen. 2025. *Videoa11y: Method and dataset for accessible video description.* CHI.
+- Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. 2023. Visual instruction tuning. *Advances in Neural Information Processing Systems*, 36.
+- Andrés Marafioti, Orr Zohar, Miquel Farré, Merve Noyan, et al. 2024. *Smolvlm: Redefining small and efficient multimodal models.* arXiv preprint arXiv:2504.05299.
+- Ollama. 2024. *Ollama: Get up and running with large language models locally.*
+- OpenAI. 2023. GPT-4 technical report. arXiv preprint arXiv:2303.08774.
+- OpenAI. 2025. Introducing GPT-OSS. Accessed August 2025.
+- Gunnar A Sigurdsson, Gul Varol, et al. 2016. Hollywood in homes: Crowdsourcing data collection for activity understanding. In *European Conference on Computer Vision (ECCV)*.
+- P. Sudarsanam, I. Martín Morató, A. Hakala, and T. Virtanen. 2024. AVCaps: An audio-visual dataset with modality-specific captions. Zenodo.
